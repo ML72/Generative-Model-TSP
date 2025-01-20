@@ -1,5 +1,5 @@
 # Run: conda env create --file environment.yml
-name: genetic_tsp
+name: generative_tsp
 channels:
   - pytorch
   - nvidia

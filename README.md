@@ -1,4 +1,4 @@
-# Genetic Curriculum TSP
+# Generative Model TSP
 
 This repository contains code for an adapted version of ACCEL, an algorithm based on dual curriculum design, for solving the Traveling Salesman Problem. We work off of the codebase for the [Attention, Learn to Solve Routing Problems!](https://openreview.net/forum?id=ByxBFsRqYm) paper, which uses an attention-based model trained with REINFORCE on a greedy rollout baseline.
 
@@ -6,7 +6,7 @@ This repository contains code for an adapted version of ACCEL, an algorithm base
 
 ## Environment Setup
 
-To install dependencies with `conda`, run the following to create an environment named `genetic_tsp`:
+To install dependencies with `conda`, run the following to create an environment named `generative_tsp`:
 
 ```
 conda env create --file environment.yml
@@ -17,7 +17,7 @@ conda env create --file environment.yml
 Don't forget to activate the environment:
 
 ```
-conda activate genetic_tsp
+conda activate generative_tsp
 ```
 
 Alternatively, dependencies can be installed manually:
