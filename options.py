@@ -60,9 +60,9 @@ def get_options(args=None):
                         help='Shrink the batch size if at least this many instances in the batch are finished'
                              ' to save memory (default None means no shrinking)')
     parser.add_argument('--data_distribution', type=str, default=None,
-                        help='Data distribution to use during training, defaults and options depend on problem.')
-    parser.add_argument('--use_genome', action='store_true',
-                        help="Use an evolutionary grammar-based genome to generate training data")
+                        help='Data distribution to use during training, defaults and options depend on problem (Note: not used anymore)')
+    parser.add_argument('--training_distribution', type=str, default='unif', choices=['unif', 'clusters', 'vae', 'vae_curriculum'],
+                        help="Data distribution to sample training data from")
     parser.add_argument('--hardness_adaptive_percent', type=int, default=0,
                         help='Percent of epoch to put under hardness adaptive curriculum')
     parser.add_argument('--data_equivariance', action='store_true',

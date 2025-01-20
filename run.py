@@ -16,7 +16,6 @@ from reinforce_baselines import NoBaseline, ExponentialBaseline, CriticBaseline,
 from nets.attention_model import AttentionModel
 from nets.pointer_network import PointerNetwork, CriticNetworkLSTM
 from utils import torch_load_cpu, load_problem, load_model
-from utils.genome import sample_random_genomes
 
 
 def run(opts):
@@ -161,13 +160,19 @@ def run(opts):
     if opts.eval_only:
         validate(model, val_dataset, opts)
     else:
+        # Load generative model
+        # Options are currently hard coded, can abstract out later if multiple generative models need to be supported
+        GEN_MODEL_PATH = 'pretrained/tsp_generator/vae_tsp_generator.pth'
         HIDDEN_DIM = 512
         LATENT_DIM = 128
-        generator = SeqVAE(input_dim=2, hidden_dim=HIDDEN_DIM, latent_dim=LATENT_DIM, seq_length=opts.graph_size)
-        generator.load_state_dict(torch.load('pretrained/level_generator/vae_link_distribution.pth', weights_only=True, map_location=torch.device('cpu')))
-        generator = generator.to(opts.device)
-        generator.eval()
+        generator = None
+        if opts.training_distribution == 'vae' or opts.training_distribution == 'vae_curriculum':
+            generator = SeqVAE(input_dim=2, hidden_dim=HIDDEN_DIM, latent_dim=LATENT_DIM, seq_length=opts.graph_size)
+            generator.load_state_dict(torch.load(GEN_MODEL_PATH, weights_only=True))
+            generator = generator.to(opts.device)
+            generator.eval()
 
+        # Run training loop
         ewc_dataset = None
         for epoch in range(opts.epoch_start, opts.epoch_start + opts.n_epochs):
             ewc_dataset = train_epoch(

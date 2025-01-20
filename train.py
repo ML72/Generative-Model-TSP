@@ -10,8 +10,7 @@ from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 
 from nets.attention_model import set_decode_type
-from utils.transformations import transform_tensor_batch, fit_unit_batch, rotate_tensor_batch, translate_tensor_batch, scale_tensor_batch
-from utils.genome import sample_random_genomes, GENOME_SIZE, GENOME_MAX, GENOME_MIN, GENOME_INC, MUTATE_PROB
+from utils.transformations import transform_tensor_batch, fit_unit_batch
 from utils.hardness_adaptive import get_hard_samples
 from utils.ewc import EWC
 from utils.log_utils import log_values
@@ -96,18 +95,29 @@ def train_epoch(
         size=opts.graph_size, num_samples=opts.epoch_size, distribution=opts.data_distribution
     )
 
-    data_tensor = torch.zeros((opts.epoch_size, opts.graph_size, 2), dtype=torch.float)
-    for i in range((opts.epoch_size * 3) // (opts.batch_size * 4)):
-        with torch.no_grad():
-            sampled_sequences = generator.sample(num_samples=opts.batch_size, seq_length=opts.graph_size, device=opts.device)
-        data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = sampled_sequences.cpu().detach()
+    if opts.training_distribution != 'unif':
+        data_tensor = torch.zeros((opts.epoch_size, opts.graph_size, 2), dtype=torch.float)
 
-    data_tensor = torch.clamp(data_tensor, 0, 1)
-    for i in range(data_tensor.shape[0]):
-        training_dataset[i] = data_tensor[i]
-    random.shuffle(training_dataset.data)
+        LINK_VALUES = [1, 5, 10, 15]
+        for i in range(opts.epoch_size // opts.batch_size):
+            if opts.training_distribution == 'clusters':
+                link_size = LINK_VALUES[len(LINK_VALUES) % i]
+                data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = link_batch(opts.batch_size, opts.graph_size, link_size=link_size, noise=0.05)
+            elif opts.training_distribution == 'vae':
+                with torch.no_grad():
+                    sampled_sequences = generator.sample(num_samples=opts.batch_size, seq_length=opts.graph_size, device=opts.device)
+                data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = sampled_sequences.cpu().detach()
+            elif opts.training_distribution == 'vae_curriculum':
+                # TODO: NOT IMPLEMENTED YET
+                pass
+            else:
+                raise ValueError("Unknown training distribution")
+
+        data_tensor = torch.clamp(data_tensor, 0, 1)
+        for i in range(data_tensor.shape[0]):
+            training_dataset[i] = data_tensor[i]
     
-    # Randomly make half the data harder if hardness adaptive curriculum is used
+    # Randomly make a specified fraction of the data harder if hardness adaptive curriculum is used
     if opts.hardness_adaptive_percent > 0:
         target = (training_dataset.size * opts.hardness_adaptive_percent) // 100
         hard_data = get_hard_samples(model, training_dataset.data[:target], eps=5, device=opts.device, baseline=baseline)
@@ -131,6 +141,9 @@ def train_epoch(
             ewc_dataset,
             opts
         )
+    
+    # Shuffle dataset before training!
+    random.shuffle(training_dataset.data)
     
     # Wrap dataset in DataLoader
     training_dataset_wrapped = baseline.wrap_dataset(training_dataset)
@@ -174,10 +187,7 @@ def train_epoch(
         )
 
         if opts.verbose_checkpoints:
-            print('Saving genomes and datasets...')
-            if opts.use_genome:
-                genome_filepath = os.path.join(opts.save_dir, 'epoch-{}_genome.npy'.format(epoch))
-                np.save(genome_filepath, np.array(genomes))
+            print('Saving datasets...')
             data_filepath = os.path.join(opts.save_dir, 'epoch-{}_data.npy'.format(epoch))
             np.save(data_filepath, np.array(training_dataset.data))
 
@@ -190,14 +200,12 @@ def train_epoch(
     # lr_scheduler should be called at end of epoch
     lr_scheduler.step()
     
-    # Compute regret on instances
+    # Compute importance on instances
     calc_ewc = opts.ewc_lambda > 0
-    if calc_ewc:
-        bl_cost = 0
-        if baseline is not None and hasattr(baseline, 'model'):
-            bl_cost = rollout(baseline.model, training_dataset, opts)
-        train_regret = rollout(model, training_dataset, opts) - bl_cost
-        sorted_idx = torch.argsort(train_regret)
+    use_curriculum = opts.training_distribution == 'vae_curriculum'
+    if calc_ewc or use_curriculum:
+        train_importance = rollout(model, training_dataset, opts)
+        sorted_idx = torch.argsort(train_importance)
 
     # Create new EWC dataset if applicable
     if calc_ewc:
@@ -226,6 +234,9 @@ def train_batch(
     # Apply data transformations if specified
     if opts.data_equivariance:
         x = transform_tensor_batch(x)
+    
+    # Ensure data is in correct range
+    x = fit_unit_batch(x)
 
     # Move to GPU if available
     x = move_to(x, opts.device)
