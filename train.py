@@ -227,9 +227,8 @@ def train_epoch(
         mean = z_focus.mean(dim=0)
         std = z_focus.std(dim=0)
 
-        z_focus = torch.normal(mean, std, size=(NUM_FOCUS, generator.latent_dim))
-        z_resample = torch.randn(NUM_RESAMPLE, generator.latent_dim)
-        z_dataset = torch.cat([z_focus, z_resample], dim=0)
+        z_dataset = torch.randn(opts.epoch_size, generator.latent_dim)
+        z_dataset[:NUM_FOCUS] = mean + std * z_dataset[:NUM_FOCUS]
 
     # Create new EWC dataset if applicable
     if calc_ewc:
