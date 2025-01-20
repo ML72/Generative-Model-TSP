@@ -101,8 +101,10 @@ def train_epoch(
         LINK_VALUES = [1, 5, 10, 15]
         for i in range(opts.epoch_size // opts.batch_size):
             if opts.training_distribution == 'clusters':
-                link_size = LINK_VALUES[len(LINK_VALUES) % i]
-                data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = link_batch(opts.batch_size, opts.graph_size, link_size=link_size, noise=0.05)
+                link_size = LINK_VALUES[i % len(LINK_VALUES)]
+                data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = torch.tensor(
+                    link_batch(opts.batch_size, opts.graph_size, link_size=link_size, noise=0.05)
+                )
             elif opts.training_distribution == 'vae':
                 with torch.no_grad():
                     sampled_sequences = generator.sample(num_samples=opts.batch_size, seq_length=opts.graph_size, device=opts.device)
