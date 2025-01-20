@@ -77,6 +77,7 @@ def train_epoch(
         lr_scheduler,
         epoch,
         generator,
+        z_dataset,
         ewc_dataset,
         val_dataset,
         problem,
@@ -98,6 +99,9 @@ def train_epoch(
     if opts.training_distribution != 'unif':
         data_tensor = torch.zeros((opts.epoch_size, opts.graph_size, 2), dtype=torch.float)
 
+        if opts.training_distribution == 'vae_curriculum' and z_dataset == None:
+            z_dataset = torch.randn(opts.epoch_size, generator.latent_dim)
+
         LINK_VALUES = [1, 5, 10, 15]
         for i in range(opts.epoch_size // opts.batch_size):
             if opts.training_distribution == 'clusters':
@@ -110,8 +114,14 @@ def train_epoch(
                     sampled_sequences = generator.sample(num_samples=opts.batch_size, seq_length=opts.graph_size, device=opts.device)
                 data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = sampled_sequences.cpu().detach()
             elif opts.training_distribution == 'vae_curriculum':
-                # TODO: NOT IMPLEMENTED YET
-                pass
+                with torch.no_grad():
+                    sampled_sequences = generator.sample(
+                        num_samples=opts.batch_size,
+                        z=z_dataset[i*opts.batch_size:(i+1)*opts.batch_size],
+                        seq_length=opts.graph_size,
+                        device=opts.device
+                    )
+                data_tensor[i*opts.batch_size:(i+1)*opts.batch_size] = sampled_sequences.cpu().detach()
             else:
                 raise ValueError("Unknown training distribution")
 
@@ -208,6 +218,18 @@ def train_epoch(
     if calc_ewc or use_curriculum:
         train_importance = rollout(model, training_dataset, opts)
         sorted_idx = torch.argsort(train_importance)
+    
+    # Create new z dataset if applicable
+    if use_curriculum:
+        NUM_FOCUS = opts.epoch_size // 5
+        NUM_RESAMPLE = opts.epoch_size - NUM_FOCUS
+        z_focus = z_dataset[sorted_idx][NUM_RESAMPLE:]
+        mean = z_focus.mean(dim=0)
+        std = z_focus.std(dim=0)
+
+        z_focus = torch.normal(mean, std, size=(NUM_FOCUS, generator.latent_dim))
+        z_resample = torch.randn(NUM_RESAMPLE, generator.latent_dim)
+        z_dataset = torch.cat([z_focus, z_resample], dim=0)
 
     # Create new EWC dataset if applicable
     if calc_ewc:
@@ -216,7 +238,7 @@ def train_epoch(
             ewc_dataset_new.append(training_dataset[sorted_idx[i]])
         ewc_dataset = torch.stack(ewc_dataset_new, dim=0).to(opts.device)
 
-    return ewc_dataset
+    return z_dataset, ewc_dataset
 
 
 def train_batch(

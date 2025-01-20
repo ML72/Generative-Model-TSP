@@ -65,8 +65,9 @@ class SeqVAE(nn.Module):
         return out, mean, log_var
     
     def sample(self, num_samples, z=None, seq_length=None, device='cpu'):
-        if z is None:
-            z = torch.randn(num_samples, self.latent_dim).to(device)
+        if z == None:
+            z = torch.randn(num_samples, self.latent_dim)
+        z = z.to(device)
         
         with torch.no_grad():
             generated = self.decoder(z, seq_length=seq_length)

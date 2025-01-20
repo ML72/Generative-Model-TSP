@@ -173,15 +173,17 @@ def run(opts):
             generator.eval()
 
         # Run training loop
+        z_dataset = None
         ewc_dataset = None
         for epoch in range(opts.epoch_start, opts.epoch_start + opts.n_epochs):
-            ewc_dataset = train_epoch(
+            z_dataset, ewc_dataset = train_epoch(
                 model,
                 optimizer,
                 baseline,
                 lr_scheduler,
                 epoch,
                 generator,
+                z_dataset,
                 ewc_dataset,
                 val_dataset,
                 problem,
