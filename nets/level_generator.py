@@ -54,6 +54,10 @@ class SeqVAE(nn.Module):
         eps = torch.randn_like(std)
         return mean + eps * std
     
+    def encode(self, x):
+        mean, log_var = self.encoder(x)
+        return self.reparameterize(mean, log_var)
+    
     def forward(self, x):
         mean, log_var = self.encoder(x)
         z = self.reparameterize(mean, log_var)

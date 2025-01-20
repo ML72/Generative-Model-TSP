@@ -47,8 +47,8 @@ LINK_VALUES = [5, 1, 10] # Out of order from [1, 5, 10, 15] for aesthetic reason
 vae_samples = generator.sample(num_samples=NUM_SAMPLES, seq_length=NUM_NODES).cpu().detach().numpy()
 for i in range(NUM_SAMPLES):
     train_sample = link_batch(1, NUM_NODES, link_size=LINK_VALUES[i % len(LINK_VALUES)], noise=0.05)
-    subplot_embedding(axs[0, i], train_sample[0], f"Train Example {i+1}", color='orange')
-    subplot_embedding(axs[1, i], vae_samples[i], f"VAE Example {i+1}", color='blue')
+    subplot_embedding(axs[0, i], train_sample[0], f"VAE Train Sample {i+1}", color='orange')
+    subplot_embedding(axs[1, i], vae_samples[i], f"VAE Inference Sample {i+1}", color='blue')
 
 if not os.path.exists("results/plots"):
     os.makedirs("results/plots")

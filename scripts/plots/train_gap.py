@@ -28,9 +28,9 @@ PLOTS = [
 ]
 MODELS = {
     'baseline_unif': 'Uniform (Baseline)',
-    'hac_fullbatch': 'HAC (Baseline)',
-    'curriculum_ewc_genome': 'Genetic Curriculum (Ours)',
-    #'ablation_noewc': 'Ablation (No EWC)',
+    'baseline_hac': 'HAC (Baseline)',
+    'clusters_hac': 'Clusters',
+    'vae': 'VAE',
     #'ablation_nogenome': 'Ablation (No Genome)',
 }
 DATASETS = {
@@ -41,9 +41,9 @@ DATASETS = {
 }
 COLORS = {
     'baseline_unif': 'purple',
-    'hac_fullbatch': 'red',
-    'curriculum_ewc_genome': 'blue',
-    'ablation_noewc': 'green',
+    'baseline_hac': 'red',
+    'clusters_hac': 'blue',
+    'vae': 'green',
     'ablation_nogenome': 'orange'
 }
 WIDTH = 3

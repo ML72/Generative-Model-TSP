@@ -16,3 +16,4 @@ dependencies:
   - pip
   - pip:
     - tensorboard_logger
+    - scikit-learn
