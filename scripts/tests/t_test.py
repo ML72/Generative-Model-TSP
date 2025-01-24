@@ -6,8 +6,8 @@ import json
 
 # Define constants, model fields as necessary to conduct different tests
 DATASET_DIR = 'results/tsp/tsp_tsplib50_test_seed1234'
-MODEL1 = 'hac_fullbatch'
-MODEL2 = 'curriculum_ewc_genome'
+MODEL1 = 'baseline_hac'
+MODEL2 = 'vae'
 FIELD = 'Gap_Worst_0.1'
 TRIALS = 5
 

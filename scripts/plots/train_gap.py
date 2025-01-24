@@ -11,7 +11,7 @@ import matplotlib.patches as mpatches
 # Modify the PLOTS constant to generate different plots
 # Modify the MODELS constant to change the plotted models
 BASE_DIR = 'results/tsp'
-RESULT_FILENAME = 'test.png' # 'train_gap_main.png', 'train_gap_appendix.png'
+RESULT_FILENAME = 'test.png' # 'train_gap_main.png', 'train_gap_ablation.png', 'train_gap_appendix.png'
 PLOTS = [
     {'dataset': 'tsp_gmm50_test_seed1234', 'field': 'Gap_Avg', 'name': 'Avg Gap'},
     {'dataset': 'tsp_diag50_test_seed1234', 'field': 'Gap_Avg', 'name': 'Avg Gap'},
@@ -29,9 +29,9 @@ PLOTS = [
 MODELS = {
     'baseline_unif': 'Uniform (Baseline)',
     'baseline_hac': 'HAC (Baseline)',
-    'clusters_hac': 'Clusters',
-    'vae': 'VAE',
-    #'ablation_nogenome': 'Ablation (No Genome)',
+    #'ablation_no_vae': 'No VAE (Ablation)',
+    #'ablation_no_hac': 'No HAC (Ablation)',
+    'vae': 'Generative Sampling (Ours)'
 }
 DATASETS = {
     'tsp_unif50_test_seed1234': "Uniform",
@@ -42,9 +42,9 @@ DATASETS = {
 COLORS = {
     'baseline_unif': 'purple',
     'baseline_hac': 'red',
-    'clusters_hac': 'blue',
-    'vae': 'green',
-    'ablation_nogenome': 'orange'
+    'ablation_no_vae': 'green',
+    'ablation_no_hac': 'orange',
+    'vae': 'blue'
 }
 WIDTH = 3
 TRIALS = 5
@@ -82,6 +82,9 @@ def subplot_embedding(subplot, dataset, field, title):
             subplot.fill_between(epochs, means-stds, means+stds, color=COLORS[model], alpha=0.2)
         y_max = max(y_max, np.max(means[1:]))
 
+        # Print out last value
+        print(f"{MODELS[model]}: {means[-1]:.3f} +/- {stds[-1]:.3f}")
+
     subplot.set_title(title)
     subplot.margins(x=0)
     subplot.xlim = (0, max(epochs))
@@ -95,7 +98,7 @@ fig, axs = plt.subplots(height, WIDTH, figsize=(3.5 * WIDTH, 3.5 * height))
 plt.subplots_adjust(hspace=0.1)
 
 for i, plot in enumerate(PLOTS):
-    print(f"Plotting from {DATASETS[plot['dataset']]}")
+    print(f"Plotting: {DATASETS[plot['dataset']]}")
     target_axs = axs[i] if height == 1 else axs[i // WIDTH, i % WIDTH]
     subplot_embedding(
         target_axs,
@@ -103,6 +106,7 @@ for i, plot in enumerate(PLOTS):
         plot['field'],
         f"{plot['name']} on {DATASETS[plot['dataset']]}"
     )
+    print("")
 
 # Add custom legend for plot colors
 custom_handles = [
