@@ -1,8 +1,10 @@
-# Generative Model TSP
+# Combinatorial Optimization with Generative Sampling
 
-This repository contains code for an adapted version of ACCEL, an algorithm based on dual curriculum design, for solving the Traveling Salesman Problem. We work off of the codebase for the [Attention, Learn to Solve Routing Problems!](https://openreview.net/forum?id=ByxBFsRqYm) paper, which uses an attention-based model trained with REINFORCE on a greedy rollout baseline.
+This repository contains code for Combinatorial Optimization with Generative Sampling (COGS), a deep reinforcement learning algorithm for solving the Traveling Salesman Problem. COGS addresses the issue of robustness to different distributions, focusing most on worst-case scenarios in practical use cases. COGS samples training data from a generative model, which allows better coverage and interpolation in the space of possible training distributions.
 
-![TSP100](images/tsp.gif)
+![Generative Model TSP](images/generative_tsp_architecture.png)
+
+We work off of the codebase for the [Attention, Learn to Solve Routing Problems](https://openreview.net/forum?id=ByxBFsRqYm) paper, which uses an attention-based model trained with REINFORCE on a greedy rollout baseline. We build off of the [hardness-adaptive curriculum (HAC)](https://arxiv.org/abs/2204.03236) paper, which has made progress on distributional robustness.
 
 ## Environment Setup
 
@@ -36,18 +38,29 @@ To work with the Concorde solver, which we treat as an oracle, run the following
 pip install "pyconcorde @ git+https://github.com/jvkersch/pyconcorde"
 ```
 
+## Results
+
+This repository provides code for generating the Gaussian Mixture and Diagonal datasets, which are synthetic and designed to be challenging for state-of-the-art TSP solvers. We also provide code for generating our proposed TSPLib50 dataset, which tests model performance on "practical" distributions. Visualizations of example instances from these distributions are below. For TSPLib50, we also plot the original TSPLib instance that we sampled from in light gray.
+
+![Distribution Visualization](images/distribution_test_visualization.png)
+
+We show that COGS significantly improves the performance of deep RL TSP solvers on hard distributions, especially in "worst-case" scenarios on real-world distributions of practical interest. The plot below depicts gaps across training epochs of our proposed Generative Sampling model (blue) compared to baselines, on average cases across different distributions and worst-case scenarios in TSPLib50. Such improved robustness and performance guarantees are significant in real-world deployment.
+
+![Train Gap](images/train_gap.png)
+
+To replicate results from our paper, see `/scripts/README.md`.
+
 ## Usage
 
 ### Generating Data
 
-Training data is generated on the fly. To generate validation and test data (same as used in the paper) for the TSP:
+Training data is generated on the fly. To generate test data (same as used in the paper) for the TSP:
 ```
-python generate_data.py --problem tsp --name validation --seed 1234
 python generate_data.py --problem tsp --name test --seed 1234
 ```
 
 * Note, for the command above, if the files already exist, then including the `-f` flag will overwrite these files. 
-* If unzipping data from `tsplib.zip`, make sure the file path is correct and there is no redundant folders created during the unzipping process. 
+* If unzipping data from `tsplib.zip`, make sure the file path is correct and there are no redundant folders created during the unzipping process. 
 
 ### Training
 
